@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Screen Share with Remote Control</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 20px;
+                background: #f5f5f5;
+            }
+
+            .container {
+                background: white;
+                padding: 30px;
+                border-radius: 10px;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+                margin-bottom: 20px;
+            }
+
+            .mode-selection {
+                text-align: center;
+                margin-bottom: 30px;
+            }
+
+            .mode-buttons {
+                display: flex;
+                gap: 20px;
+                justify-content: center;
+                margin: 20px 0;
+            }
+
+            .mode-btn {
+                padding: 15px 30px;
+                font-size: 18px;
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+                transition: all 0.3s;
+            }
+
+            .host-btn {
+                background: #007bff;
+                color: white;
+            }
+
+            .host-btn:hover {
+                background: #0056b3;
+            }
+
+            .viewer-btn {
+                background: #28a745;
+                color: white;
+            }
+
+            .viewer-btn:hover {
+                background: #1e7e34;
+            }
+
+            .room-input {
+                margin: 20px 0;
+            }
+
+            .room-input input {
+                padding: 12px;
+                font-size: 16px;
+                border: 2px solid #ddd;
+                border-radius: 6px;
+                margin: 0 10px;
+                width: 200px;
+            }
+
+            .start-btn {
+                padding: 12px 25px;
+                font-size: 16px;
+                background: #17a2b8;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                cursor: pointer;
+            }
+
+            .start-btn:hover {
+                background: #138496;
+            }
+
+            .screen-container {
+                position: relative;
+                background: #000;
+                border-radius: 8px;
+                overflow: hidden;
+                margin: 20px 0;
+                min-height: 400px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .screen-display {
+                max-width: 100%;
+                max-height: 600px;
+                cursor: crosshair;
+            }
+
+            .controls {
+                display: flex;
+                gap: 15px;
+                justify-content: center;
+                margin: 20px 0;
+                flex-wrap: wrap;
+            }
+
+            .control-btn {
+                padding: 10px 20px;
+                border: none;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 14px;
+            }
+
+            .status {
+                text-align: center;
+                padding: 15px;
+                border-radius: 6px;
+                margin: 15px 0;
+                font-weight: bold;
+            }
+
+            .status.connected {
+                background: #d4edda;
+                color: #155724;
+            }
+
+            .status.disconnected {
+                background: #f8d7da;
+                color: #721c24;
+            }
+
+            .status.waiting {
+                background: #fff3cd;
+                color: #856404;
+            }
+
+            .hidden {
+                display: none;
+            }
+
+            .room-info {
+                background: #e7f3ff;
+                padding: 15px;
+                border-radius: 6px;
+                margin: 15px 0;
+                text-align: center;
+            }
+
+            .viewer-list {
+                background: #f8f9fa;
+                padding: 15px;
+                border-radius: 6px;
+                margin: 15px 0;
+            }
+
+            .loading {
+                color: #666;
+                font-style: italic;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1 style="text-align: center; color: #333">
+                Screen Share with Remote Control
+            </h1>
+
+            <div id="modeSelection" class="mode-selection">
+                <h2>Choose Your Mode</h2>
+                <div class="mode-buttons">
+                    <button
+                        class="mode-btn host-btn"
+                        onclick="selectMode('host')"
+                    >
+                        Share My Screen
+                    </button>
+                    <button
+                        class="mode-btn viewer-btn"
+                        onclick="selectMode('viewer')"
+                    >
+                        View & Control
+                    </button>
+                </div>
+            </div>
+
+            <div id="hostSetup" class="hidden">
+                <h2>Share Your Screen</h2>
+                <div class="room-input">
+                    <label>Room ID:</label>
+                    <input
+                        type="text"
+                        id="hostRoomId"
+                        placeholder="Enter room name"
+                        value="room123"
+                    />
+                    <button class="start-btn" onclick="startHost()">
+                        Start Sharing
+                    </button>
+                </div>
+            </div>
+
+            <div id="viewerSetup" class="hidden">
+                <h2>Connect to Screen</h2>
+                <div class="room-input">
+                    <label>Room ID:</label>
+                    <input
+                        type="text"
+                        id="viewerRoomId"
+                        placeholder="Enter room name"
+                        value="room123"
+                    />
+                    <button class="start-btn" onclick="startViewer()">
+                        Connect
+                    </button>
+                </div>
+            </div>
+
+            <div id="statusArea"></div>
+            <div id="roomInfo" class="hidden"></div>
+
+            <div id="screenContainer" class="screen-container hidden">
+                <div class="loading">Waiting for screen share...</div>
+                <canvas id="screenDisplay" class="screen-display"></canvas>
+            </div>
+
+            <div id="controls" class="controls hidden">
+                <button
+                    class="control-btn"
+                    style="background: #dc3545; color: white"
+                    onclick="disconnect()"
+                >
+                    Disconnect
+                </button>
+                <button
+                    class="control-btn"
+                    style="background: #6c757d; color: white"
+                    onclick="toggleRemoteControl()"
+                >
+                    <span id="controlToggle">Enable Control</span>
+                </button>
+            </div>
+
+            <div id="viewerList" class="viewer-list hidden">
+                <h3>Connected Viewers:</h3>
+                <div id="viewers"></div>
+            </div>
+        </div>
+
+        <script src="/socket.io/socket.io.js"></script>
+        <script src="app.js"></script>
+    </body>
+</html>
