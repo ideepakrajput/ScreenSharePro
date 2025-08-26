@@ -3,258 +3,979 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Screen Share with Remote Control</title>
+        <title>ScreenShare Pro - Professional Remote Control</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+            rel="stylesheet"
+        />
         <style>
-            body {
-                font-family: Arial, sans-serif;
-                max-width: 1200px;
-                margin: 0 auto;
-                padding: 20px;
-                background: #f5f5f5;
+            .gradient-bg {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             }
-
-            .container {
-                background: white;
-                padding: 30px;
-                border-radius: 10px;
-                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-                margin-bottom: 20px;
+            .glass {
+                backdrop-filter: blur(10px);
+                background: rgba(255, 255, 255, 0.1);
             }
-
-            .mode-selection {
-                text-align: center;
-                margin-bottom: 30px;
-            }
-
-            .mode-buttons {
-                display: flex;
-                gap: 20px;
-                justify-content: center;
-                margin: 20px 0;
-            }
-
-            .mode-btn {
-                padding: 15px 30px;
-                font-size: 18px;
-                border: none;
-                border-radius: 8px;
-                cursor: pointer;
-                transition: all 0.3s;
-            }
-
-            .host-btn {
-                background: #007bff;
-                color: white;
-            }
-
-            .host-btn:hover {
-                background: #0056b3;
-            }
-
-            .viewer-btn {
-                background: #28a745;
-                color: white;
-            }
-
-            .viewer-btn:hover {
-                background: #1e7e34;
-            }
-
-            .room-input {
-                margin: 20px 0;
-            }
-
-            .room-input input {
-                padding: 12px;
-                font-size: 16px;
-                border: 2px solid #ddd;
-                border-radius: 6px;
-                margin: 0 10px;
-                width: 200px;
-            }
-
-            .start-btn {
-                padding: 12px 25px;
-                font-size: 16px;
-                background: #17a2b8;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                cursor: pointer;
-            }
-
-            .start-btn:hover {
-                background: #138496;
-            }
-
             .screen-container {
+                background: radial-gradient(
+                    circle at center,
+                    #1a1a1a 0%,
+                    #000 100%
+                );
+            }
+            .control-panel {
+                transition: all 0.3s ease;
+            }
+            .control-panel.minimized {
+                transform: translateY(calc(100% - 60px));
+            }
+            .notification {
+                animation: slideIn 0.3s ease-out;
+            }
+            @keyframes slideIn {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            .pulse-dot {
+                animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            }
+            @keyframes pulse {
+                0%,
+                100% {
+                    opacity: 1;
+                }
+                50% {
+                    opacity: 0.5;
+                }
+            }
+            .loading-spinner {
+                border-top-color: transparent;
+                animation: spin 1s linear infinite;
+            }
+            @keyframes spin {
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+            .fullscreen-canvas {
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                z-index: 9999 !important;
+                background: #000 !important;
+            }
+            .status-indicator {
                 position: relative;
-                background: #000;
-                border-radius: 8px;
-                overflow: hidden;
-                margin: 20px 0;
-                min-height: 400px;
-                display: flex;
+                display: inline-flex;
                 align-items: center;
-                justify-content: center;
             }
-
-            .screen-display {
-                max-width: 100%;
-                max-height: 600px;
-                cursor: crosshair;
+            .status-indicator::before {
+                content: "";
+                position: absolute;
+                left: -2px;
+                top: -2px;
+                right: -2px;
+                bottom: -2px;
+                border-radius: 50%;
+                background: linear-gradient(
+                    45deg,
+                    transparent,
+                    rgba(255, 255, 255, 0.3)
+                );
+                animation: rotate 2s linear infinite;
             }
-
-            .controls {
-                display: flex;
-                gap: 15px;
-                justify-content: center;
-                margin: 20px 0;
-                flex-wrap: wrap;
-            }
-
-            .control-btn {
-                padding: 10px 20px;
-                border: none;
-                border-radius: 6px;
-                cursor: pointer;
-                font-size: 14px;
-            }
-
-            .status {
-                text-align: center;
-                padding: 15px;
-                border-radius: 6px;
-                margin: 15px 0;
-                font-weight: bold;
-            }
-
-            .status.connected {
-                background: #d4edda;
-                color: #155724;
-            }
-
-            .status.disconnected {
-                background: #f8d7da;
-                color: #721c24;
-            }
-
-            .status.waiting {
-                background: #fff3cd;
-                color: #856404;
-            }
-
-            .hidden {
-                display: none;
-            }
-
-            .room-info {
-                background: #e7f3ff;
-                padding: 15px;
-                border-radius: 6px;
-                margin: 15px 0;
-                text-align: center;
-            }
-
-            .viewer-list {
-                background: #f8f9fa;
-                padding: 15px;
-                border-radius: 6px;
-                margin: 15px 0;
-            }
-
-            .loading {
-                color: #666;
-                font-style: italic;
+            @keyframes rotate {
+                to {
+                    transform: rotate(360deg);
+                }
             }
         </style>
     </head>
-    <body>
-        <div class="container">
-            <h1 style="text-align: center; color: #333">
-                Screen Share with Remote Control
-            </h1>
+    <body class="min-h-screen gradient-bg">
+        <!-- Header -->
+        <nav class="bg-white/10 backdrop-blur-md border-b border-white/20">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center py-4">
+                    <div class="flex items-center space-x-3">
+                        <div
+                            class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center"
+                        >
+                            <i class="fas fa-desktop text-white"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-2xl font-bold text-white">
+                                ScreenShare Pro
+                            </h1>
+                            <p class="text-white/60 text-sm">
+                                Professional Remote Control
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <div
+                            id="connectionStatus"
+                            class="flex items-center space-x-2"
+                        >
+                            <div class="status-indicator">
+                                <div
+                                    id="statusDot"
+                                    class="w-3 h-3 bg-green-500 rounded-full pulse-dot"
+                                ></div>
+                            </div>
+                            <span id="statusText" class="text-white text-sm"
+                                >Connected</span
+                            >
+                        </div>
+                        <button
+                            id="settingsBtn"
+                            class="text-white hover:text-blue-200 transition-colors p-2 rounded-lg hover:bg-white/10"
+                        >
+                            <i class="fas fa-cog"></i>
+                        </button>
+                        <button
+                            id="helpBtn"
+                            class="text-white hover:text-blue-200 transition-colors p-2 rounded-lg hover:bg-white/10"
+                        >
+                            <i class="fas fa-question-circle"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
 
-            <div id="modeSelection" class="mode-selection">
-                <h2>Choose Your Mode</h2>
-                <div class="mode-buttons">
-                    <button
-                        class="mode-btn host-btn"
-                        onclick="selectMode('host')"
-                    >
-                        Share My Screen
-                    </button>
-                    <button
-                        class="mode-btn viewer-btn"
-                        onclick="selectMode('viewer')"
-                    >
-                        View & Control
-                    </button>
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Mode Selection -->
+            <div id="modeSelection" class="text-center">
+                <div
+                    class="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20"
+                >
+                    <h2 class="text-3xl font-bold text-white mb-4">
+                        Choose Your Mode
+                    </h2>
+                    <p class="text-white/80 mb-8">
+                        Select whether you want to share your screen or control
+                        someone else's
+                    </p>
+
+                    <div class="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+                        <button
+                            id="hostBtn"
+                            class="group bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 rounded-xl p-8 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl"
+                        >
+                            <div class="text-center">
+                                <div
+                                    class="w-16 h-16 mx-auto mb-4 bg-white/20 rounded-full flex items-center justify-center group-hover:animate-pulse"
+                                >
+                                    <i
+                                        class="fas fa-broadcast-tower text-2xl text-white"
+                                    ></i>
+                                </div>
+                                <h3 class="text-xl font-bold text-white mb-2">
+                                    Host Session
+                                </h3>
+                                <p class="text-white/80">
+                                    Share your screen with others
+                                </p>
+                                <div class="mt-4 text-white/60 text-sm">
+                                    <i class="fas fa-users mr-2"></i>Multiple
+                                    viewers supported
+                                </div>
+                            </div>
+                        </button>
+
+                        <button
+                            id="viewerBtn"
+                            class="group bg-gradient-to-br from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 rounded-xl p-8 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl"
+                        >
+                            <div class="text-center">
+                                <div
+                                    class="w-16 h-16 mx-auto mb-4 bg-white/20 rounded-full flex items-center justify-center group-hover:animate-pulse"
+                                >
+                                    <i
+                                        class="fas fa-eye text-2xl text-white"
+                                    ></i>
+                                </div>
+                                <h3 class="text-xl font-bold text-white mb-2">
+                                    Join Session
+                                </h3>
+                                <p class="text-white/80">
+                                    View and control a shared screen
+                                </p>
+                                <div class="mt-4 text-white/60 text-sm">
+                                    <i class="fas fa-mouse-pointer mr-2"></i
+                                    >Full remote control
+                                </div>
+                            </div>
+                        </button>
+                    </div>
                 </div>
             </div>
 
+            <!-- Host Setup -->
             <div id="hostSetup" class="hidden">
-                <h2>Share Your Screen</h2>
-                <div class="room-input">
-                    <label>Room ID:</label>
-                    <input
-                        type="text"
-                        id="hostRoomId"
-                        placeholder="Enter room name"
-                        value="room123"
-                    />
-                    <button class="start-btn" onclick="startHost()">
-                        Start Sharing
-                    </button>
+                <div
+                    class="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20"
+                >
+                    <div class="text-center mb-8">
+                        <div
+                            class="w-20 h-20 mx-auto mb-4 bg-blue-500/20 rounded-full flex items-center justify-center"
+                        >
+                            <i
+                                class="fas fa-broadcast-tower text-3xl text-blue-400"
+                            ></i>
+                        </div>
+                        <h2 class="text-3xl font-bold text-white mb-2">
+                            Start Screen Sharing
+                        </h2>
+                        <p class="text-white/80">
+                            Create a room and share your screen with others
+                        </p>
+                    </div>
+
+                    <div class="max-w-lg mx-auto space-y-6">
+                        <div>
+                            <label class="block text-white font-medium mb-2">
+                                <i class="fas fa-door-open mr-2"></i>Room ID
+                            </label>
+                            <div class="relative">
+                                <input
+                                    type="text"
+                                    id="hostRoomId"
+                                    class="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10"
+                                    placeholder="Enter room name (e.g., meeting-2024)"
+                                    value="demo-room"
+                                />
+                                <button
+                                    id="generateRoomIdBtn"
+                                    class="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/60 hover:text-white"
+                                >
+                                    <i class="fas fa-random"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label
+                                    class="block text-white font-medium mb-2"
+                                >
+                                    <i class="fas fa-image mr-2"></i>Quality
+                                </label>
+                                <select
+                                    id="hostQuality"
+                                    class="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                    <option value="50">Low (50%)</option>
+                                    <option value="70" selected>
+                                        Medium (70%)
+                                    </option>
+                                    <option value="90">High (90%)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-white font-medium mb-2"
+                                >
+                                    <i class="fas fa-video mr-2"></i>FPS
+                                </label>
+                                <select
+                                    id="hostFPS"
+                                    class="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                    <option value="5">Low (5 FPS)</option>
+                                    <option value="10" selected>
+                                        Medium (10 FPS)
+                                    </option>
+                                    <option value="15">High (15 FPS)</option>
+                                    <option value="20">Ultra (20 FPS)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button
+                            id="startHostBtn"
+                            class="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-bold py-4 rounded-lg transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2 shadow-lg"
+                        >
+                            <i class="fas fa-play"></i>
+                            <span>Start Sharing Session</span>
+                        </button>
+
+                        <div class="text-center">
+                            <button
+                                id="backToSelectionFromHost"
+                                class="text-white/60 hover:text-white transition-colors"
+                            >
+                                <i class="fas fa-arrow-left mr-2"></i>Back to
+                                mode selection
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
+            <!-- Viewer Setup -->
             <div id="viewerSetup" class="hidden">
-                <h2>Connect to Screen</h2>
-                <div class="room-input">
-                    <label>Room ID:</label>
-                    <input
-                        type="text"
-                        id="viewerRoomId"
-                        placeholder="Enter room name"
-                        value="room123"
-                    />
-                    <button class="start-btn" onclick="startViewer()">
-                        Connect
-                    </button>
+                <div
+                    class="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20"
+                >
+                    <div class="text-center mb-8">
+                        <div
+                            class="w-20 h-20 mx-auto mb-4 bg-green-500/20 rounded-full flex items-center justify-center"
+                        >
+                            <i class="fas fa-eye text-3xl text-green-400"></i>
+                        </div>
+                        <h2 class="text-3xl font-bold text-white mb-2">
+                            Join Screen Share
+                        </h2>
+                        <p class="text-white/80">
+                            Enter the room ID to connect to a shared screen
+                        </p>
+                    </div>
+
+                    <div class="max-w-lg mx-auto space-y-6">
+                        <div>
+                            <label class="block text-white font-medium mb-2">
+                                <i class="fas fa-door-open mr-2"></i>Room ID
+                            </label>
+                            <input
+                                type="text"
+                                id="viewerRoomId"
+                                class="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                placeholder="Enter room ID to join"
+                                value="demo-room"
+                            />
+                        </div>
+
+                        <div
+                            class="bg-white/5 rounded-lg p-4 border border-white/10"
+                        >
+                            <h4 class="text-white font-medium mb-2">
+                                <i
+                                    class="fas fa-info-circle mr-2 text-blue-400"
+                                ></i
+                                >What you can do:
+                            </h4>
+                            <ul class="text-white/80 text-sm space-y-1">
+                                <li>
+                                    <i
+                                        class="fas fa-mouse-pointer mr-2 text-green-400"
+                                    ></i
+                                    >Control mouse movements and clicks
+                                </li>
+                                <li>
+                                    <i
+                                        class="fas fa-keyboard mr-2 text-green-400"
+                                    ></i
+                                    >Send keyboard input
+                                </li>
+                                <li>
+                                    <i
+                                        class="fas fa-scroll mr-2 text-green-400"
+                                    ></i
+                                    >Scroll and interact
+                                </li>
+                                <li>
+                                    <i
+                                        class="fas fa-expand mr-2 text-green-400"
+                                    ></i
+                                    >View in fullscreen mode
+                                </li>
+                            </ul>
+                        </div>
+
+                        <button
+                            id="startViewerBtn"
+                            class="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-white font-bold py-4 rounded-lg transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2 shadow-lg"
+                        >
+                            <i class="fas fa-sign-in-alt"></i>
+                            <span>Connect to Session</span>
+                        </button>
+
+                        <div class="text-center">
+                            <button
+                                id="backToSelectionFromViewer"
+                                class="text-white/60 hover:text-white transition-colors"
+                            >
+                                <i class="fas fa-arrow-left mr-2"></i>Back to
+                                mode selection
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div id="statusArea"></div>
-            <div id="roomInfo" class="hidden"></div>
+            <!-- Screen Container -->
+            <div id="screenArea" class="hidden">
+                <div class="relative">
+                    <!-- Screen Display -->
+                    <div
+                        id="screenContainer"
+                        class="screen-container rounded-2xl overflow-hidden border border-white/20 relative min-h-[400px]"
+                    >
+                        <div
+                            id="loadingState"
+                            class="absolute inset-0 flex items-center justify-center"
+                        >
+                            <div class="text-center">
+                                <div
+                                    class="w-16 h-16 border-4 border-white/30 border-t-white rounded-full loading-spinner mx-auto mb-4"
+                                ></div>
+                                <p class="text-white text-lg font-medium">
+                                    Connecting to screen share...
+                                </p>
+                                <p class="text-white/60 text-sm mt-2">
+                                    Please wait while we establish connection
+                                </p>
+                            </div>
+                        </div>
+                        <canvas
+                            id="screenDisplay"
+                            class="w-full h-auto cursor-crosshair hidden"
+                        ></canvas>
 
-            <div id="screenContainer" class="screen-container hidden">
-                <div class="loading">Waiting for screen share...</div>
-                <canvas id="screenDisplay" class="screen-display"></canvas>
+                        <!-- Screen Overlay Controls -->
+                        <div
+                            id="screenOverlay"
+                            class="absolute top-4 right-4 space-y-2 hidden"
+                        >
+                            <button
+                                id="fullscreenBtn"
+                                class="bg-black/70 hover:bg-black/90 text-white p-3 rounded-lg transition-all duration-200 backdrop-blur-sm border border-white/20"
+                            >
+                                <i class="fas fa-expand"></i>
+                            </button>
+                            <button
+                                id="screenshotBtn"
+                                class="bg-black/70 hover:bg-black/90 text-white p-3 rounded-lg transition-all duration-200 backdrop-blur-sm border border-white/20"
+                            >
+                                <i class="fas fa-camera"></i>
+                            </button>
+                        </div>
+
+                        <!-- Connection Quality Indicator -->
+                        <div
+                            id="qualityIndicator"
+                            class="absolute top-4 left-4 bg-black/70 text-white px-3 py-1 rounded-lg text-sm backdrop-blur-sm border border-white/20 hidden"
+                        >
+                            <i class="fas fa-signal mr-2"></i>
+                            <span id="qualityText">Good</span>
+                        </div>
+                    </div>
+
+                    <!-- Control Panel -->
+                    <div
+                        id="controlPanelBtn"
+                        class="control-panel fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-md border-t border-white/20 p-4 hidden z-40"
+                    >
+                        <div class="max-w-7xl mx-auto">
+                            <div class="flex items-center justify-between mb-4">
+                                <button
+                                    id="togglePanelBtn"
+                                    class="text-white hover:text-blue-200 transition-colors p-2 rounded-lg hover:bg-white/10"
+                                >
+                                    <i class="fas fa-chevron-down"></i>
+                                </button>
+                                <div class="text-white text-center">
+                                    <div class="font-medium" id="roomIdDisplay">
+                                        Room:
+                                    </div>
+                                    <div class="text-sm text-white/60">
+                                        <span id="viewerCount">👥 0</span>
+                                        <span class="ml-4" id="connectionTime"
+                                            >⏱️ 00:00</span
+                                        >
+                                    </div>
+                                </div>
+                                <div class="opacity-0">placeholder</div>
+                            </div>
+
+                            <div
+                                class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3"
+                            >
+                                <button
+                                    id="controlToggleBtn"
+                                    class="bg-yellow-600/80 hover:bg-yellow-600 text-white px-4 py-3 rounded-lg transition-colors flex items-center justify-center space-x-2 font-medium"
+                                >
+                                    <i class="fas fa-mouse-pointer"></i>
+                                    <span class="hidden md:inline"
+                                        >Enable Control</span
+                                    >
+                                </button>
+
+                                <button
+                                    id="settingsBtn1"
+                                    class="bg-gray-600/80 hover:bg-gray-600 text-white px-4 py-3 rounded-lg transition-colors flex items-center justify-center space-x-2"
+                                >
+                                    <i class="fas fa-cog"></i>
+                                    <span class="hidden md:inline"
+                                        >Settings</span
+                                    >
+                                </button>
+
+                                <button
+                                    id="fullscreenBtn1"
+                                    class="bg-purple-600/80 hover:bg-purple-600 text-white px-4 py-3 rounded-lg transition-colors flex items-center justify-center space-x-2"
+                                >
+                                    <i class="fas fa-expand"></i>
+                                    <span class="hidden md:inline"
+                                        >Fullscreen</span
+                                    >
+                                </button>
+
+                                <button
+                                    id="fitScreenBtn"
+                                    class="bg-indigo-600/80 hover:bg-indigo-600 text-white px-4 py-3 rounded-lg transition-colors flex items-center justify-center space-x-2"
+                                >
+                                    <i class="fas fa-compress-arrows-alt"></i>
+                                    <span class="hidden md:inline"
+                                        >Fit Screen</span
+                                    >
+                                </button>
+
+                                <button
+                                    id="keyboardBtn"
+                                    class="bg-teal-600/80 hover:bg-teal-600 text-white px-4 py-3 rounded-lg transition-colors flex items-center justify-center space-x-2 md:col-span-1"
+                                >
+                                    <i class="fas fa-keyboard"></i>
+                                    <span class="hidden md:inline"
+                                        >Keyboard</span
+                                    >
+                                </button>
+
+                                <button
+                                    id="disconnectBtn"
+                                    class="bg-red-600/80 hover:bg-red-600 text-white px-4 py-3 rounded-lg transition-colors flex items-center justify-center space-x-2 font-medium"
+                                >
+                                    <i class="fas fa-sign-out-alt"></i>
+                                    <span class="hidden md:inline"
+                                        >Disconnect</span
+                                    >
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Room Info -->
+                    <div id="roomInfo" class="mt-6 hidden">
+                        <div
+                            class="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20"
+                        >
+                            <h3 class="text-xl font-bold text-white mb-4">
+                                <i
+                                    class="fas fa-info-circle mr-2 text-blue-400"
+                                ></i
+                                >Session Information
+                            </h3>
+                            <div class="grid md:grid-cols-3 gap-4">
+                                <div
+                                    class="bg-white/5 rounded-lg p-4 border border-white/10"
+                                >
+                                    <div class="flex items-center mb-2">
+                                        <i
+                                            class="fas fa-door-open text-blue-400 mr-2"
+                                        ></i>
+                                        <span class="text-white/80 font-medium"
+                                            >Room ID</span
+                                        >
+                                    </div>
+                                    <p
+                                        class="text-white font-mono text-lg"
+                                        id="currentRoomId"
+                                    >
+                                        -
+                                    </p>
+                                </div>
+                                <div
+                                    class="bg-white/5 rounded-lg p-4 border border-white/10"
+                                >
+                                    <div class="flex items-center mb-2">
+                                        <i
+                                            class="fas fa-users text-green-400 mr-2"
+                                        ></i>
+                                        <span class="text-white/80 font-medium"
+                                            >Connected Viewers</span
+                                        >
+                                    </div>
+                                    <p
+                                        class="text-white font-bold text-2xl"
+                                        id="connectedViewers"
+                                    >
+                                        0
+                                    </p>
+                                </div>
+                                <div
+                                    class="bg-white/5 rounded-lg p-4 border border-white/10"
+                                >
+                                    <div class="flex items-center mb-2">
+                                        <i
+                                            class="fas fa-chart-line text-purple-400 mr-2"
+                                        ></i>
+                                        <span class="text-white/80 font-medium"
+                                            >Session Quality</span
+                                        >
+                                    </div>
+                                    <div class="space-y-1">
+                                        <p class="text-white text-sm">
+                                            Quality:
+                                            <span
+                                                id="currentQuality"
+                                                class="font-bold"
+                                                >70%</span
+                                            >
+                                        </p>
+                                        <p class="text-white text-sm">
+                                            Frame Rate:
+                                            <span
+                                                id="currentFPS"
+                                                class="font-bold"
+                                                >10 FPS</span
+                                            >
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
+        </main>
 
-            <div id="controls" class="controls hidden">
-                <button
-                    class="control-btn"
-                    style="background: #dc3545; color: white"
-                    onclick="disconnect()"
-                >
-                    Disconnect
-                </button>
-                <button
-                    class="control-btn"
-                    style="background: #6c757d; color: white"
-                    onclick="toggleRemoteControl()"
-                >
-                    <span id="controlToggle">Enable Control</span>
-                </button>
-            </div>
+        <!-- Settings Modal -->
+        <div
+            id="settingsModal"
+            class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 hidden z-50"
+        >
+            <div
+                class="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 max-w-md w-full max-h-[90vh] overflow-y-auto"
+            >
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-bold text-white">
+                        <i class="fas fa-cog mr-2 text-blue-400"></i>Settings
+                    </h3>
+                    <button
+                        id="closeSettingsBtn"
+                        class="text-white hover:text-gray-300 p-2 rounded-lg hover:bg-white/10"
+                    >
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
 
-            <div id="viewerList" class="viewer-list hidden">
-                <h3>Connected Viewers:</h3>
-                <div id="viewers"></div>
+                <div class="space-y-6">
+                    <div id="hostSettings" class="space-y-6 hidden">
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-white font-medium"
+                                    >Video Quality</label
+                                >
+                                <span id="qualityValue" class="text-white/80"
+                                    >70%</span
+                                >
+                            </div>
+                            <input
+                                type="range"
+                                id="qualitySlider"
+                                min="30"
+                                max="100"
+                                value="70"
+                                class="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer slider"
+                            />
+                            <div
+                                class="flex justify-between text-white/60 text-sm mt-1"
+                            >
+                                <span>Low (30%)</span>
+                                <span>High (100%)</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-white font-medium"
+                                    >Frame Rate</label
+                                >
+                                <span id="fpsValue" class="text-white/80"
+                                    >10 FPS</span
+                                >
+                            </div>
+                            <input
+                                type="range"
+                                id="fpsSlider"
+                                min="5"
+                                max="25"
+                                value="10"
+                                class="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer slider"
+                            />
+                            <div
+                                class="flex justify-between text-white/60 text-sm mt-1"
+                            >
+                                <span>Low (5 FPS)</span>
+                                <span>High (25 FPS)</span>
+                            </div>
+                        </div>
+
+                        <button
+                            id="applySettingsBtn"
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-colors"
+                        >
+                            Apply Changes
+                        </button>
+                    </div>
+
+                    <div id="viewerSettings" class="space-y-4 hidden">
+                        <div
+                            class="bg-white/5 rounded-lg p-4 border border-white/10"
+                        >
+                            <h4 class="text-white font-medium mb-3">
+                                Display Options
+                            </h4>
+                            <div class="space-y-3">
+                                <label class="flex items-center space-x-3">
+                                    <input
+                                        type="checkbox"
+                                        id="autoFitScreen"
+                                        class="rounded bg-white/10 border-white/30 text-blue-600"
+                                        checked
+                                    />
+                                    <span class="text-white/80"
+                                        >Auto-fit to screen</span
+                                    >
+                                </label>
+                                <label class="flex items-center space-x-3">
+                                    <input
+                                        type="checkbox"
+                                        id="showQuality"
+                                        class="rounded bg-white/10 border-white/30 text-blue-600"
+                                        checked
+                                    />
+                                    <span class="text-white/80"
+                                        >Show quality indicator</span
+                                    >
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        class="bg-white/5 rounded-lg p-4 border border-white/10"
+                    >
+                        <h4 class="text-white font-medium mb-3">
+                            <i class="fas fa-info-circle mr-2 text-blue-400"></i
+                            >Session Info
+                        </h4>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-white/60"
+                                    >Connection Status:</span
+                                >
+                                <span class="text-green-400 font-medium"
+                                    >Connected</span
+                                >
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-white/60">Session Time:</span>
+                                <span class="text-white" id="sessionTime"
+                                    >00:00</span
+                                >
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-white/60">Data Usage:</span>
+                                <span class="text-white" id="dataUsage"
+                                    >~ MB</span
+                                >
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
+
+        <!-- Help Modal -->
+        <div
+            id="helpModal"
+            class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 hidden z-50"
+        >
+            <div
+                class="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            >
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-bold text-white">
+                        <i class="fas fa-question-circle mr-2 text-blue-400"></i
+                        >Help & Support
+                    </h3>
+                    <button
+                        id="closeHelpBtn"
+                        class="text-white hover:text-gray-300 p-2 rounded-lg hover:bg-white/10"
+                    >
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+
+                <div class="space-y-6">
+                    <div
+                        class="bg-white/5 rounded-lg p-6 border border-white/10"
+                    >
+                        <h4 class="text-white font-bold mb-3">
+                            <i
+                                class="fas fa-broadcast-tower mr-2 text-blue-400"
+                            ></i
+                            >How to Host a Session
+                        </h4>
+                        <ol
+                            class="text-white/80 space-y-2 text-sm list-decimal list-inside"
+                        >
+                            <li>Click "Host Session" on the main screen</li>
+                            <li>
+                                Enter a unique Room ID or generate one randomly
+                            </li>
+                            <li>
+                                Choose your preferred quality and frame rate
+                                settings
+                            </li>
+                            <li>Click "Start Sharing Session"</li>
+                            <li>
+                                Share the Room ID with viewers you want to
+                                connect
+                            </li>
+                        </ol>
+                    </div>
+
+                    <div
+                        class="bg-white/5 rounded-lg p-6 border border-white/10"
+                    >
+                        <h4 class="text-white font-bold mb-3">
+                            <i class="fas fa-eye mr-2 text-green-400"></i>How to
+                            Join a Session
+                        </h4>
+                        <ol
+                            class="text-white/80 space-y-2 text-sm list-decimal list-inside"
+                        >
+                            <li>Click "Join Session" on the main screen</li>
+                            <li>Enter the Room ID provided by the host</li>
+                            <li>Click "Connect to Session"</li>
+                            <li>Wait for the screen share to load</li>
+                            <li>
+                                Click "Enable Control" to start remote control
+                            </li>
+                        </ol>
+                    </div>
+
+                    <div
+                        class="bg-white/5 rounded-lg p-6 border border-white/10"
+                    >
+                        <h4 class="text-white font-bold mb-3">
+                            <i class="fas fa-keyboard mr-2 text-purple-400"></i
+                            >Keyboard Shortcuts
+                        </h4>
+                        <div
+                            class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm"
+                        >
+                            <div class="text-white/80">
+                                <kbd
+                                    class="bg-white/20 px-2 py-1 rounded text-xs"
+                                    >F11</kbd
+                                >
+                                - Toggle Fullscreen
+                            </div>
+                            <div class="text-white/80">
+                                <kbd
+                                    class="bg-white/20 px-2 py-1 rounded text-xs"
+                                    >Ctrl+Q</kbd
+                                >
+                                - Disconnect
+                            </div>
+                            <div class="text-white/80">
+                                <kbd
+                                    class="bg-white/20 px-2 py-1 rounded text-xs"
+                                    >Space</kbd
+                                >
+                                - Toggle Control
+                            </div>
+                            <div class="text-white/80">
+                                <kbd
+                                    class="bg-white/20 px-2 py-1 rounded text-xs"
+                                    >Esc</kbd
+                                >
+                                - Exit Fullscreen
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        class="bg-white/5 rounded-lg p-6 border border-white/10"
+                    >
+                        <h4 class="text-white font-bold mb-3">
+                            <i
+                                class="fas fa-exclamation-triangle mr-2 text-yellow-400"
+                            ></i
+                            >Troubleshooting
+                        </h4>
+                        <div class="space-y-3 text-sm text-white/80">
+                            <div>
+                                <strong>Screen sharing not working:</strong>
+                                Make sure the host has proper screen recording
+                                permissions enabled.
+                            </div>
+                            <div>
+                                <strong>Remote control not responding:</strong>
+                                Ensure the host has accessibility permissions
+                                enabled for mouse/keyboard control.
+                            </div>
+                            <div>
+                                <strong>Poor connection quality:</strong> Try
+                                reducing the quality and frame rate settings.
+                            </div>
+                            <div>
+                                <strong>Cannot connect to room:</strong> Verify
+                                the Room ID is correct and the host session is
+                                active.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Virtual Keyboard Modal -->
+        <div
+            id="keyboardModal"
+            class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end justify-center p-4 hidden z-50"
+        >
+            <div
+                class="bg-white/10 backdrop-blur-md rounded-t-2xl border-t border-white/20 w-full max-w-4xl"
+            >
+                <div
+                    class="p-4 border-b border-white/20 flex justify-between items-center"
+                >
+                    <h4 class="text-white font-medium">
+                        <i class="fas fa-keyboard mr-2"></i>Virtual Keyboard
+                    </h4>
+                    <button
+                        id="closeKeyboardBtn"
+                        class="text-white hover:text-gray-300"
+                    >
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div id="virtualKeyboard" class="p-6">
+                    <!-- Virtual keyboard will be generated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Notification Toast -->
+        <div
+            id="notificationArea"
+            class="fixed top-20 right-4 space-y-2 z-50"
+        ></div>
 
         <script src="/socket.io/socket.io.js"></script>
         <script src="app.js"></script>
