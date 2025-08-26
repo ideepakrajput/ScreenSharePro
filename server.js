@@ -436,8 +436,15 @@ app.get('/api/health', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`🚀 ScreenShare Pro server running on port ${PORT}`);
-    console.log(`📱 Open http://localhost:${PORT} to access the application`);
-    console.log(`🔧 API Health: http://localhost:${PORT}/api/health`);
-});
+
+// For Vercel serverless functions
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(PORT, () => {
+        console.log(`🚀 ScreenShare Pro server running on port ${PORT}`);
+        console.log(`📱 Open http://localhost:${PORT} to access the application`);
+        console.log(`🔧 API Health: http://localhost:${PORT}/api/health`);
+    });
+}
+
+// Export for Vercel serverless deployment
+module.exports = app;
